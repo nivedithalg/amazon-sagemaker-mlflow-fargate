@@ -24,7 +24,17 @@ if __name__ =='__main__':
     parser.add_argument('--min-samples-leaf', type=int, default=3)
 
     # Data, model, and output directories
+    # The model needs to be saved in a specific directory inside the container so that SageMaker can later upload it to Amazon S3. 
+    # Inside the SageMaker training container, it is typically: /opt/ml/model/
     parser.add_argument('--model-dir', type=str, default=os.environ.get('SM_MODEL_DIR'))
+    # When you run a training job in SageMaker, it automatically sets environment variables for input data channels.
+    # This directory where SageMaker stores training data inside the container and saves this training data into s3 again. 
+    # Because the data which we pull from s3 is the raw data. The data which we save from container to s3 is processed data. 
+    # We cant store any models/data in containers as containers are temporary, Once the training job completes, the container shuts down 
+    # and all local files inside it are lost. If you don’t save the data externally (like in S3), it will be deleted when the container stops! 
+    # saving output data to S3 is critical for model persistence and reproducibility.
+    # When your training job starts, SageMaker downloads the training data from S3 and stores it in /opt/ml/input/data/train/.
+    # Inside the container, you can access this data using SM_CHANNEL_TRAIN.
     parser.add_argument('--train', type=str, default=os.environ.get('SM_CHANNEL_TRAIN'))
     parser.add_argument('--test', type=str, default=os.environ.get('SM_CHANNEL_TEST'))
     parser.add_argument('--train-file', type=str, default='boston_train.csv')
